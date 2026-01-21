@@ -90,10 +90,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Detailed health check"""
-    api_key_configured = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    api_key_configured = bool(os.environ.get("OPENROUTER_API_KEY"))
     return {
         "status": "healthy",
         "ai_enabled": api_key_configured,
+        "ai_provider": "OpenRouter (Claude Haiku 4.5)" if api_key_configured else "Fallback",
         "database": "connected"
     }
 

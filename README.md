@@ -2,7 +2,7 @@
 
 ## AI-Powered Skills Translation for Transitioning Veterans
 
-VetPath is an AI application that translates military experience into civilian career opportunities, helping veterans find high-paying jobs in American manufacturing, technology, and skilled trades.
+VetPath is an AI application that translates military experience into civilian career opportunities, helping veterans find high-paying jobs in American manufacturing, technology, and skilled trades. Built with U.S.-based AI technology, it focuses on clear, factual skills translation and workforce readiness.
 
 ## Features
 
@@ -11,13 +11,19 @@ VetPath is an AI application that translates military experience into civilian c
 - **Resume Generator**: Create civilian-ready resumes tailored to target positions
 - **Gap Analyzer**: Identify skills gaps and recommend training paths
 
+## Mission
+
+- Support veterans' transition into civilian careers
+- Strengthen the American workforce in manufacturing, tech, and trades
+- Use U.S.-based AI providers for factual skills translation
+
 ## Tech Stack
 
 ### Backend
 - Python 3.11+
 - FastAPI (REST API framework)
 - SQLite (database)
-- Claude API (AI integration)
+- OpenRouter API → Claude Haiku 4.5 (U.S.-based AI with extended thinking)
 
 ### Frontend
 - React.js
@@ -32,7 +38,8 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python seed_database.py  # Initialize O*NET data
+python scripts/download_data.py  # Fetch O*NET + BLS (no API keys)
+python seed_database.py  # Initialize O*NET + BLS data
 uvicorn main:app --reload
 ```
 
@@ -56,8 +63,24 @@ npm run dev
 Create a `.env` file in the backend directory:
 
 ```
-ANTHROPIC_API_KEY=your_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
+
+The app uses OpenRouter to access Claude Haiku 4.5 with extended thinking (4K reasoning tokens) for enhanced skills analysis.
+
+## Data Sources (Required)
+
+VetPath uses real-world datasets instead of hardcoded samples. You must download and place data files locally before seeding.
+
+Required:
+- O*NET Database (tab-delimited files)
+
+Optional (enhances results):
+- BLS OEWS wage data (median wages)
+- Military-to-civilian crosswalk file
+- Training resources CSV
+
+See `backend/data/README.md` for exact file names and download steps.
 
 ## Project Structure
 
@@ -72,6 +95,7 @@ vetpath/
 │   │   ├── matcher.py       # Career matching
 │   │   ├── resume.py        # Resume generation
 │   │   └── gaps.py          # Gap analysis
+│   ├── data/                # Real-world datasets (O*NET, BLS, crosswalk)
 │   ├── seed_database.py     # Database seeder
 │   └── requirements.txt
 ├── frontend/
@@ -90,4 +114,4 @@ MIT License
 
 ---
 
-Built to support American veterans in their transition to civilian careers.
+Built to support American veterans and strengthen the U.S. workforce.

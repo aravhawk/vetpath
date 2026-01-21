@@ -1,7 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#3C3B6E"/>
-  <path d="M25 35 L50 20 L75 35 L75 70 L50 85 L25 70 Z" fill="#FFFFFF" stroke="#B22234" stroke-width="3"/>
-  <path d="M50 30 L50 75" stroke="#3C3B6E" stroke-width="4"/>
-  <path d="M35 45 L65 45" stroke="#3C3B6E" stroke-width="4"/>
-  <circle cx="50" cy="45" r="8" fill="#B22234"/>
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C41E3A"/>
+      <stop offset="100%" style="stop-color:#8B1528"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield background -->
+  <path
+    d="M50 5 L90 20 L90 50 C90 75 50 95 50 95 C50 95 10 75 10 50 L10 20 Z"
+    fill="url(#shieldGrad)"
+  />
+  
+  <!-- Shield border -->
+  <path
+    d="M50 5 L90 20 L90 50 C90 75 50 95 50 95 C50 95 10 75 10 50 L10 20 Z"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="3"
+    opacity="0.3"
+  />
+  
+  <!-- Star -->
+  <path
+    d="M50 20 L55 38 L74 38 L59 50 L65 68 L50 56 L35 68 L41 50 L26 38 L45 38 Z"
+    fill="#FFFFFF"
+  />
+  
+  <!-- Bottom stripes -->
+  <path d="M30 65 L70 65" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <path d="M35 75 L65 75" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
 </svg>

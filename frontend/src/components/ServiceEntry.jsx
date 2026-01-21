@@ -3,12 +3,12 @@ import { parseExperience } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
 
 const BRANCHES = [
-  'Army',
-  'Navy',
-  'Air Force',
-  'Marine Corps',
-  'Coast Guard',
-  'Space Force',
+  { name: 'Army', icon: '⭐' },
+  { name: 'Navy', icon: '⚓' },
+  { name: 'Air Force', icon: '✈️' },
+  { name: 'Marine Corps', icon: '🦅' },
+  { name: 'Coast Guard', icon: '🛟' },
+  { name: 'Space Force', icon: '🚀' },
 ];
 
 function ServiceEntry({ profile, onProfileSubmit, onBack }) {
@@ -54,20 +54,23 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
   };
 
   const isValid = formData.branch && formData.years_of_service && formData.experience_description.length >= 50;
+  const charCount = formData.experience_description.length;
 
   return (
-    <div className="card max-w-2xl mx-auto">
+    <div className="card max-w-2xl mx-auto animate-fade-in">
+      <div className="mb-8">
       <h2 className="section-heading">Tell Us About Your Service</h2>
-      <p className="text-gray-600 mb-6">
-        Share your military experience and we'll translate it into civilian career opportunities.
+        <p className="text-navy-300">
+          Share your military experience and our AI will translate it into civilian career opportunities.
       </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Branch and Years Row */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Branch of Service *
+            <label className="block text-sm font-medium text-navy-200 mb-2">
+              Branch of Service <span className="text-flag-red">*</span>
             </label>
             <select
               name="branch"
@@ -76,16 +79,18 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
               className="input-field"
               required
             >
-              <option value="">Select branch...</option>
+              <option value="">Select your branch...</option>
               {BRANCHES.map(branch => (
-                <option key={branch} value={branch}>{branch}</option>
+                <option key={branch.name} value={branch.name}>
+                  {branch.icon} {branch.name}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Years of Service *
+            <label className="block text-sm font-medium text-navy-200 mb-2">
+              Years of Service <span className="text-flag-red">*</span>
             </label>
             <input
               type="number"
@@ -102,11 +107,11 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
         </div>
 
         {/* MOS and Rank Row */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-navy-200 mb-2">
               MOS/Rate/AFSC
-              <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+              <span className="text-navy-500 font-normal ml-2">(Optional)</span>
             </label>
             <input
               type="text"
@@ -119,9 +124,9 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-navy-200 mb-2">
               Highest Rank Achieved
-              <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+              <span className="text-navy-500 font-normal ml-2">(Optional)</span>
             </label>
             <input
               type="text"
@@ -136,8 +141,8 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
 
         {/* Experience Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Describe Your Military Experience *
+          <label className="block text-sm font-medium text-navy-200 mb-2">
+            Describe Your Military Experience <span className="text-flag-red">*</span>
           </label>
           <textarea
             name="experience_description"
@@ -148,29 +153,61 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
             placeholder="Example: I served 4 years as an 11B Infantryman in the US Army. Led a 9-person squad during deployment. Responsible for equipment maintenance valued at $2M. Trained junior soldiers on tactics and equipment operation. Coordinated logistics for multiple field operations..."
             required
           />
-          <p className="mt-1 text-sm text-gray-500">
-            {formData.experience_description.length}/50 minimum characters
-            {formData.experience_description.length < 50 && (
-              <span className="text-amber-600"> (please provide more detail)</span>
+          <div className="mt-2 flex justify-between items-center">
+            <p className="text-sm text-navy-400">
+              {charCount < 50 ? (
+                <span className="text-amber-400">
+                  {50 - charCount} more characters needed
+                </span>
+              ) : (
+                <span className="text-green-400">
+                  ✓ Minimum reached
+                </span>
             )}
           </p>
+            <p className="text-sm text-navy-500">{charCount} characters</p>
+          </div>
         </div>
 
         {/* Tips */}
-        <div className="bg-navy-50 rounded-lg p-4">
-          <h4 className="font-medium text-navy-800 mb-2">Tips for Better Results:</h4>
-          <ul className="text-sm text-navy-700 space-y-1">
-            <li>• Include numbers: team size, budget/equipment values, quantities</li>
-            <li>• Mention leadership roles and responsibilities</li>
-            <li>• Describe technical skills and equipment you worked with</li>
-            <li>• Include any certifications or special training</li>
+        <div className="bg-navy-800/30 rounded-xl p-5 border border-navy-700/30">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-flag-blue/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold text-white mb-2">Tips for Better Results</h4>
+              <ul className="text-sm text-navy-300 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-flag-red">•</span>
+                  Include numbers: team size, budget/equipment values, quantities
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-flag-red">•</span>
+                  Mention leadership roles and responsibilities
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-flag-red">•</span>
+                  Describe technical skills and equipment you worked with
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-flag-red">•</span>
+                  Include any certifications or special training
+                </li>
           </ul>
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
-            {error}
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-4 flex items-start gap-3">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
 
@@ -181,20 +218,30 @@ function ServiceEntry({ profile, onProfileSubmit, onBack }) {
             onClick={onBack}
             className="btn-secondary"
           >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             Back
+            </span>
           </button>
           <button
             type="submit"
             disabled={!isValid || loading}
-            className="btn-primary flex items-center space-x-2"
+            className="btn-primary"
           >
             {loading ? (
-              <>
+              <span className="flex items-center gap-3">
                 <LoadingSpinner size="small" />
-                <span>Analyzing...</span>
-              </>
+                Analyzing...
+              </span>
             ) : (
-              <span>Parse My Experience</span>
+              <span className="flex items-center gap-2">
+                Parse My Experience
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </span>
             )}
           </button>
         </div>

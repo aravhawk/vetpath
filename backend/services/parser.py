@@ -1,19 +1,13 @@
 """
-AI-powered military experience parser using Claude API
+AI-powered military experience parser using OpenRouter/Claude API
 """
 
 import json
-import os
 import re
 from typing import Optional
 
-try:
-    import anthropic
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
-
 from models import ParsedSkills, Leadership
+from services.ai_client import is_ai_available, call_ai_simple
 
 
 SYSTEM_PROMPT = """You are an expert in translating military experience to civilian terminology.
@@ -79,42 +73,30 @@ def extract_json_from_text(text: str) -> dict:
     }
 
 
-def parse_military_experience(description: str, api_key: Optional[str] = None) -> ParsedSkills:
+def parse_military_experience(description: str) -> ParsedSkills:
     """
-    Parse military experience description into structured skills using Claude API.
+    Parse military experience description into structured skills using Claude API via OpenRouter.
 
     Args:
         description: Free-text description of military experience
-        api_key: Optional Anthropic API key (uses environment variable if not provided)
 
     Returns:
         ParsedSkills object with extracted and translated skills
     """
-    # If no API available or no key, use fallback parser
-    if not ANTHROPIC_AVAILABLE:
-        return _fallback_parser(description)
-
-    key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
+    # If no API available, use fallback parser
+    if not is_ai_available():
+        print("AI not available (OPENROUTER_API_KEY not set), using fallback parser")
         return _fallback_parser(description)
 
     try:
-        client = anthropic.Anthropic(api_key=key)
-
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Parse this military experience and extract skills:\n\n{description}"
-                }
-            ]
+        response_text = call_ai_simple(
+            user_message=f"Parse this military experience and extract skills:\n\n{description}",
+            system_prompt=SYSTEM_PROMPT,
+            max_tokens=2048,
         )
 
-        # Extract text from response
-        response_text = response.content[0].text
+        if not response_text:
+            return _fallback_parser(description)
 
         # Parse JSON from response
         data = extract_json_from_text(response_text)
@@ -123,9 +105,9 @@ def parse_military_experience(description: str, api_key: Optional[str] = None) -
         leadership = None
         if data.get("leadership") and isinstance(data["leadership"], dict):
             leadership = Leadership(
-                level=data["leadership"].get("level", "unknown"),
-                scope=data["leadership"].get("scope", ""),
-                context=data["leadership"].get("context", "")
+                level=data["leadership"].get("level") or "unknown",
+                scope=data["leadership"].get("scope") or "",
+                context=data["leadership"].get("context") or ""
             )
 
         return ParsedSkills(
@@ -140,7 +122,7 @@ def parse_military_experience(description: str, api_key: Optional[str] = None) -
         )
 
     except Exception as e:
-        print(f"Error calling Claude API: {e}")
+        print(f"Error calling AI: {e}")
         return _fallback_parser(description)
 
 

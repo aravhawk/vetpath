@@ -2,134 +2,70 @@
 Gap analysis service - identifies skill gaps and recommends training
 """
 
+import json
+import re
 from typing import Optional
+
 from database import get_occupation_skills, get_training_for_skill, get_occupation_by_code
 from models import GapAnalysis, TrainingRecommendation
+from services.ai_client import is_ai_available, call_ai_simple
 
 
-# Default training recommendations for common skill gaps
-DEFAULT_TRAINING = {
-    "project management": TrainingRecommendation(
-        skill_gap="project management",
-        certification="PMP or CAPM Certification",
-        estimated_time="3-6 months",
-        cost="Often covered by VA benefits",
-        provider="Project Management Institute",
-        va_eligible=True
-    ),
-    "data analysis": TrainingRecommendation(
-        skill_gap="data analysis",
-        certification="Google Data Analytics Certificate",
-        estimated_time="6 months",
-        cost="Free on Coursera",
-        provider="Google/Coursera",
-        va_eligible=True
-    ),
-    "programming": TrainingRecommendation(
-        skill_gap="programming",
-        certification="Google IT Automation with Python",
-        estimated_time="6 months",
-        cost="Free on Coursera",
-        provider="Google/Coursera",
-        va_eligible=True
-    ),
-    "software development": TrainingRecommendation(
-        skill_gap="software development",
-        certification="AWS Certified Developer or freeCodeCamp",
-        estimated_time="6-12 months",
-        cost="Free to $150",
-        provider="AWS/freeCodeCamp",
-        va_eligible=True
-    ),
-    "cybersecurity": TrainingRecommendation(
-        skill_gap="cybersecurity",
-        certification="CompTIA Security+",
-        estimated_time="3-4 months",
-        cost="$392 exam fee, often VA covered",
-        provider="CompTIA",
-        va_eligible=True
-    ),
-    "network administration": TrainingRecommendation(
-        skill_gap="network administration",
-        certification="CompTIA Network+",
-        estimated_time="2-3 months",
-        cost="$358 exam fee, often VA covered",
-        provider="CompTIA",
-        va_eligible=True
-    ),
-    "lean manufacturing": TrainingRecommendation(
-        skill_gap="lean manufacturing",
-        certification="Six Sigma Green Belt",
-        estimated_time="2-3 months",
-        cost="$438 exam fee, often employer paid",
-        provider="ASQ or IASSC",
-        va_eligible=True
-    ),
-    "quality control": TrainingRecommendation(
-        skill_gap="quality control",
-        certification="ASQ Certified Quality Inspector",
-        estimated_time="2-3 months",
-        cost="$394 exam fee",
-        provider="American Society for Quality",
-        va_eligible=True
-    ),
-    "cad software": TrainingRecommendation(
-        skill_gap="CAD software",
-        certification="Autodesk Certified User",
-        estimated_time="2-3 months",
-        cost="$125 exam fee",
-        provider="Autodesk",
-        va_eligible=True
-    ),
-    "supply chain": TrainingRecommendation(
-        skill_gap="supply chain",
-        certification="APICS CSCP",
-        estimated_time="6-9 months",
-        cost="$595 exam fee, often employer paid",
-        provider="ASCM",
-        va_eligible=True
-    ),
-    "healthcare administration": TrainingRecommendation(
-        skill_gap="healthcare administration",
-        certification="Certified Medical Manager",
-        estimated_time="6 months",
-        cost="$325 exam fee",
-        provider="PAHCOM",
-        va_eligible=True
-    ),
-    "electrical systems": TrainingRecommendation(
-        skill_gap="electrical systems",
-        certification="Journeyman Electrician License",
-        estimated_time="Apprenticeship program",
-        cost="Paid apprenticeship",
-        provider="State Licensing Board",
-        va_eligible=True
-    ),
-    "mechanical design": TrainingRecommendation(
-        skill_gap="mechanical design",
-        certification="SOLIDWORKS Certification",
-        estimated_time="3-6 months",
-        cost="$99-199 exam fee",
-        provider="Dassault Systemes",
-        va_eligible=True
-    ),
-    "budgeting": TrainingRecommendation(
-        skill_gap="budgeting",
-        certification="Financial Management Certificate",
-        estimated_time="3-4 months",
-        cost="Varies by program",
-        provider="Various universities",
-        va_eligible=True
-    ),
-    "process improvement": TrainingRecommendation(
-        skill_gap="process improvement",
-        certification="Lean Six Sigma Yellow Belt",
-        estimated_time="1-2 months",
-        cost="$100-300",
-        provider="Multiple providers",
-        va_eligible=True
-    ),
-}
+def _extract_json_from_text(text: str) -> dict:
+    match = re.search(r'\{[\s\S]*\}', text)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def _build_ai_development_plan(
+    occupation_title: str,
+    match_percentage: float,
+    gaps: list[str],
+    recommendations: list[TrainingRecommendation],
+) -> tuple[Optional[str], list[str], list[str]]:
+    if not is_ai_available():
+        return None, [], []
+
+    rec_names = [rec.certification for rec in recommendations[:6]]
+    prompt = f"""
+You are a career coach for veterans. Based on the target role and skill gaps, provide a short development plan.
+Return ONLY JSON with keys:
+- development_summary (string)
+- development_steps (array of 3-6 short steps)
+- resource_suggestions (array of 4-6 resource ideas; no URLs)
+
+Target role: {occupation_title}
+Match percentage: {match_percentage}%
+Skill gaps: {gaps}
+Existing training recommendations: {rec_names}
+
+Constraints:
+- Keep items short and actionable.
+- Do NOT include URLs.
+- Prefer reputable sources (community college, apprenticeship, CompTIA/PMI/AWS, employer training, government programs).
+"""
+
+    try:
+        response = call_ai_simple(user_message=prompt, max_tokens=1200)
+        if not response:
+            return None, [], []
+        data = _extract_json_from_text(response)
+        summary = data.get("development_summary")
+        steps = data.get("development_steps") or []
+        resources = data.get("resource_suggestions") or []
+        if not isinstance(steps, list):
+            steps = []
+        if not isinstance(resources, list):
+            resources = []
+        return summary, steps, resources
+    except Exception:
+        return None, [], []
+
+
 
 
 def analyze_gaps(
@@ -183,11 +119,24 @@ def analyze_gaps(
     # Calculate estimated time to ready
     time_to_ready = _calculate_time_to_ready(recommendations, match_pct)
 
+    occupation = get_occupation_by_code(target_occupation_code)
+    occupation_title = occupation.get("occupation_title", "Target Role") if occupation else "Target Role"
+
+    development_summary, development_steps, resource_suggestions = _build_ai_development_plan(
+        occupation_title=occupation_title,
+        match_percentage=round(match_pct, 1),
+        gaps=list(missing_skills),
+        recommendations=recommendations,
+    )
+
     return GapAnalysis(
         gaps=list(missing_skills),
         recommendations=recommendations,
         estimated_time_to_ready=time_to_ready,
-        match_percentage=round(match_pct, 1)
+        match_percentage=round(match_pct, 1),
+        development_summary=development_summary,
+        development_steps=development_steps,
+        resource_suggestions=resource_suggestions,
     )
 
 
@@ -213,18 +162,6 @@ def _get_training_recommendation(skill: str) -> Optional[TrainingRecommendation]
             cost=db_training.get("cost", "Varies"),
             provider=db_training.get("provider"),
             va_eligible=bool(db_training.get("va_eligible", True))
-        )
-
-    # Check default training recommendations
-    if skill_lower in DEFAULT_TRAINING:
-        rec = DEFAULT_TRAINING[skill_lower]
-        return TrainingRecommendation(
-            skill_gap=skill,
-            certification=rec.certification,
-            estimated_time=rec.estimated_time,
-            cost=rec.cost,
-            provider=rec.provider,
-            va_eligible=rec.va_eligible
         )
 
     # Generic recommendation for unknown skills

@@ -74,3 +74,7 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# VetPath datasets (large; keep local only)
+backend/data/**
+!backend/data/README.md

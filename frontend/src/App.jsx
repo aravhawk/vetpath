@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
 import Welcome from './components/Welcome';
 import ServiceEntry from './components/ServiceEntry';
@@ -86,7 +86,6 @@ function App() {
         return (
           <CareerMatches
             matches={careerMatches}
-            skills={parsedSkills}
             onSelectCareer={(career) => {
               setSelectedCareer(career);
               nextStep();
@@ -130,11 +129,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen flex flex-col">
       <Header onLogoClick={handleStartOver} />
 
       {currentStep > 1 && currentStep < 6 && (
-        <div className="max-w-4xl mx-auto px-4 pt-6">
+        <div className="max-w-4xl mx-auto px-4 pt-8 w-full">
           <ProgressStepper
             steps={STEPS.slice(1, -1)}
             currentStep={currentStep - 1}
@@ -142,13 +141,55 @@ function App() {
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="flex-1 max-w-5xl mx-auto px-4 py-8 w-full">
         {renderStep()}
       </main>
 
-      <footer className="text-center py-8 text-gray-500 text-sm">
-        <p>VetPath - Built to support American veterans in their transition to civilian careers.</p>
-        <p className="mt-2">Powered by American AI technology</p>
+      <footer className="border-t border-navy-800/50 bg-navy-950/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-flag-red to-flag-red/80 rounded-lg flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="w-5 h-5">
+                  <path
+                    d="M50 15 L80 28 L80 55 C80 72 50 88 50 88 C50 88 20 72 20 55 L20 28 Z"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="5"
+                  />
+                  <path
+                    d="M50 30 L53 40 L64 40 L55 47 L58 57 L50 51 L42 57 L45 47 L36 40 L47 40 Z"
+                    fill="white"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-semibold">VetPath</p>
+                <p className="text-navy-400 text-xs">Strengthening America's Workforce</p>
+              </div>
+            </div>
+
+            <div className="text-center md:text-right">
+              <p className="text-navy-300 text-sm">
+                Built to support American veterans in their transition to civilian careers.
+              </p>
+              <p className="text-navy-500 text-xs mt-1">
+                Powered by U.S.-based AI technology • Supporting American jobs
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="mt-6 pt-6 border-t border-navy-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-navy-500">
+            <div className="flex items-center gap-4">
+              <span>© 2026 VetPath</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">🇺🇸</span>
+              <span>Made in the USA</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

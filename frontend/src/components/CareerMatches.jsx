@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
-function CareerMatches({ matches, skills, onSelectCareer, onBack }) {
+function CareerMatches({ matches, onSelectCareer, onBack }) {
   const [industryFilter, setIndustryFilter] = useState('all');
-  const [salaryFilter, setSalaryFilter] = useState('all');
 
   // Get unique industries from matches
   const industries = ['all', ...new Set(matches.map(m => m.industry))];
@@ -10,41 +9,30 @@ function CareerMatches({ matches, skills, onSelectCareer, onBack }) {
   // Filter matches
   const filteredMatches = matches.filter(match => {
     if (industryFilter !== 'all' && match.industry !== industryFilter) return false;
-    if (salaryFilter === '50k' && match.median_wage < 50000) return false;
-    if (salaryFilter === '75k' && match.median_wage < 75000) return false;
-    if (salaryFilter === '100k' && match.median_wage < 100000) return false;
     return true;
   });
 
-  const formatSalary = (wage) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(wage);
-  };
-
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
+    <div className="max-w-3xl mx-auto animate-fade-in">
+      <div className="text-center mb-10">
         <h2 className="section-heading">Your Career Matches</h2>
-        <p className="text-gray-600">
-          Based on your skills, we found {matches.length} matching careers.
+        <p className="text-navy-300">
+          Based on your skills, we found <span className="text-white font-semibold">{matches.length}</span> matching careers.
           Click on a career to see gap analysis and generate a resume.
         </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="card mb-6">
         <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-navy-200 mb-2">
               Industry
             </label>
             <select
               value={industryFilter}
               onChange={(e) => setIndustryFilter(e.target.value)}
-              className="input-field py-2"
+              className="input-field py-2.5"
             >
               {industries.map(ind => (
                 <option key={ind} value={ind}>
@@ -53,26 +41,11 @@ function CareerMatches({ matches, skills, onSelectCareer, onBack }) {
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Minimum Salary
-            </label>
-            <select
-              value={salaryFilter}
-              onChange={(e) => setSalaryFilter(e.target.value)}
-              className="input-field py-2"
-            >
-              <option value="all">Any Salary</option>
-              <option value="50k">$50,000+</option>
-              <option value="75k">$75,000+</option>
-              <option value="100k">$100,000+</option>
-            </select>
-          </div>
         </div>
       </div>
 
       {/* Results Count */}
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-navy-400 mb-4">
         Showing {filteredMatches.length} of {matches.length} careers
       </p>
 
@@ -85,18 +58,22 @@ function CareerMatches({ matches, skills, onSelectCareer, onBack }) {
               career={match}
               rank={index + 1}
               onSelect={() => onSelectCareer(match)}
-              formatSalary={formatSalary}
             />
           ))
         ) : (
-          <div className="card text-center py-8">
-            <p className="text-gray-500">No careers match your current filters.</p>
+          <div className="card text-center py-12">
+            <div className="w-16 h-16 bg-navy-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-navy-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p className="text-navy-400 mb-3">No careers match your current filters.</p>
             <button
               onClick={() => {
                 setIndustryFilter('all');
                 setSalaryFilter('all');
               }}
-              className="text-flag-blue hover:underline mt-2"
+              className="text-flag-red hover:text-flag-red/80 font-medium transition-colors"
             >
               Reset filters
             </button>
@@ -107,91 +84,96 @@ function CareerMatches({ matches, skills, onSelectCareer, onBack }) {
       {/* Back Button */}
       <div className="flex justify-start">
         <button onClick={onBack} className="btn-secondary">
-          Back to Skills
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Skills
+          </span>
         </button>
       </div>
     </div>
   );
 }
 
-function CareerCard({ career, rank, onSelect, formatSalary }) {
-  const getOutlookColor = (outlook) => {
+function CareerCard({ career, rank, onSelect }) {
+  const getOutlookStyle = (outlook) => {
     const outlookLower = outlook.toLowerCase();
-    if (outlookLower.includes('much faster')) return 'text-green-600 bg-green-50';
-    if (outlookLower.includes('faster')) return 'text-green-600 bg-green-50';
-    if (outlookLower.includes('average')) return 'text-yellow-600 bg-yellow-50';
-    if (outlookLower.includes('declining')) return 'text-red-600 bg-red-50';
-    return 'text-gray-600 bg-gray-50';
+    if (outlookLower.includes('much faster') || outlookLower.includes('faster')) {
+      return 'bg-green-500/20 text-green-400 border-green-500/30';
+    }
+    if (outlookLower.includes('average')) {
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    }
+    if (outlookLower.includes('declining')) {
+      return 'bg-red-500/20 text-red-400 border-red-500/30';
+    }
+    return 'bg-navy-700/50 text-navy-300 border-navy-600/50';
   };
 
   const getMatchScoreColor = (score) => {
-    if (score >= 70) return 'text-green-600';
-    if (score >= 50) return 'text-yellow-600';
-    return 'text-gray-600';
+    if (score >= 70) return 'from-green-500 to-green-400';
+    if (score >= 50) return 'from-yellow-500 to-yellow-400';
+    return 'from-navy-500 to-navy-400';
   };
 
   return (
     <div
-      className="card hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-flag-blue"
+      className="card hover:border-flag-red/30 transition-all duration-300 cursor-pointer group"
       onClick={onSelect}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="w-8 h-8 rounded-full bg-navy-100 text-navy-800 flex items-center justify-center font-semibold text-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-flag-blue/30 to-flag-red/20 flex items-center justify-center font-bold text-white border border-navy-600/50">
               {rank}
             </span>
-            <h3 className="text-lg font-semibold text-navy-900">
+            <h3 className="text-lg font-bold text-white group-hover:text-flag-red transition-colors truncate">
               {career.occupation_title}
             </h3>
           </div>
 
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+          <p className="text-navy-300 text-sm mb-4 line-clamp-2">
             {career.description}
           </p>
 
           <div className="flex flex-wrap gap-3 text-sm">
-            <span className="flex items-center text-green-700">
-              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {formatSalary(career.median_wage)}/yr
-            </span>
-
-            <span className={`px-2 py-0.5 rounded ${getOutlookColor(career.job_outlook)}`}>
+            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-medium border ${getOutlookStyle(career.job_outlook)}`}>
               {career.job_outlook}
             </span>
 
-            <span className="text-gray-500 capitalize">
+            <span className="text-navy-400 capitalize flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
               {career.industry}
             </span>
           </div>
         </div>
 
-        <div className="text-right ml-4">
-          <div className={`text-2xl font-bold ${getMatchScoreColor(career.skill_match_score)}`}>
+        <div className="text-right flex-shrink-0">
+          <div className={`text-3xl font-bold bg-gradient-to-r ${getMatchScoreColor(career.skill_match_score)} bg-clip-text text-transparent`}>
             {Math.round(career.skill_match_score)}%
           </div>
-          <div className="text-xs text-gray-500">Match</div>
+          <div className="text-xs text-navy-500 font-medium">MATCH</div>
         </div>
       </div>
 
       {/* Required Skills Preview */}
       {career.required_skills && career.required_skills.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="text-xs text-gray-500 mb-2">Key Skills:</div>
-          <div className="flex flex-wrap gap-1">
+        <div className="mt-4 pt-4 border-t border-navy-700/50">
+          <div className="text-xs text-navy-500 mb-2 font-medium">KEY SKILLS</div>
+          <div className="flex flex-wrap gap-1.5">
             {career.required_skills.slice(0, 5).map((skill, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                className="px-2 py-1 bg-navy-800/50 text-navy-300 rounded-md text-xs border border-navy-700/50"
               >
                 {skill}
               </span>
             ))}
             {career.required_skills.length > 5 && (
-              <span className="px-2 py-0.5 text-gray-500 text-xs">
+              <span className="px-2 py-1 text-navy-500 text-xs">
                 +{career.required_skills.length - 5} more
               </span>
             )}
@@ -199,9 +181,9 @@ function CareerCard({ career, rank, onSelect, formatSalary }) {
         </div>
       )}
 
-      <div className="mt-4 text-sm text-flag-blue font-medium flex items-center">
+      <div className="mt-4 text-sm text-flag-red font-medium flex items-center group-hover:gap-2 transition-all">
         View Details & Gap Analysis
-        <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </div>

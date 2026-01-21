@@ -1,17 +1,12 @@
 """
 Resume generation service - creates civilian-ready resumes from military profiles
+Uses OpenRouter/Claude API with extended thinking
 """
 
-import os
 from typing import Optional
 
-try:
-    import anthropic
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
-
 from models import MilitaryProfile, ParsedSkills
+from services.ai_client import is_ai_available, call_ai_simple
 
 
 SYSTEM_PROMPT = """You are a professional resume writer specializing in military-to-civilian transitions.
@@ -55,7 +50,6 @@ def generate_resume(
     parsed_skills: ParsedSkills,
     target_job: str,
     target_company: Optional[str] = None,
-    api_key: Optional[str] = None
 ) -> str:
     """
     Generate a civilian-ready resume from military profile.
@@ -65,21 +59,15 @@ def generate_resume(
         parsed_skills: ParsedSkills from the parser
         target_job: Target civilian job title
         target_company: Optional target company name
-        api_key: Optional Anthropic API key
 
     Returns:
         Resume text in Markdown format
     """
-    if not ANTHROPIC_AVAILABLE:
-        return _fallback_resume(profile, parsed_skills, target_job)
-
-    key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
+    if not is_ai_available():
+        print("AI not available, using fallback resume generator")
         return _fallback_resume(profile, parsed_skills, target_job)
 
     try:
-        client = anthropic.Anthropic(api_key=key)
-
         # Build the profile summary for the prompt
         profile_summary = f"""
 MILITARY PROFILE:
@@ -105,19 +93,16 @@ TARGET POSITION: {target_job}
 {f'TARGET COMPANY: {target_company}' if target_company else ''}
 """
 
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Create a professional resume for this veteran:\n\n{profile_summary}"
-                }
-            ]
+        response = call_ai_simple(
+            user_message=f"Create a professional resume for this veteran:\n\n{profile_summary}",
+            system_prompt=SYSTEM_PROMPT,
+            max_tokens=3072,
         )
 
-        return response.content[0].text
+        if response:
+            return response
+        else:
+            return _fallback_resume(profile, parsed_skills, target_job)
 
     except Exception as e:
         print(f"Error generating resume with API: {e}")
@@ -220,7 +205,6 @@ def generate_targeted_bullets(
     experience_description: str,
     target_job: str,
     num_bullets: int = 5,
-    api_key: Optional[str] = None
 ) -> list[str]:
     """
     Generate targeted achievement bullets for a specific job application.
@@ -229,40 +213,30 @@ def generate_targeted_bullets(
         experience_description: Military experience description
         target_job: Target civilian job
         num_bullets: Number of bullets to generate
-        api_key: Optional API key
 
     Returns:
         List of achievement bullet strings
     """
-    if not ANTHROPIC_AVAILABLE:
-        return _fallback_bullets(num_bullets)
-
-    key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
+    if not is_ai_available():
         return _fallback_bullets(num_bullets)
 
     try:
-        client = anthropic.Anthropic(api_key=key)
-
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""Based on this military experience, generate {num_bullets} strong resume bullet points
+        response = call_ai_simple(
+            user_message=f"""Based on this military experience, generate {num_bullets} strong resume bullet points
 targeting a {target_job} position. Use civilian language, quantify achievements, and start with action verbs.
 
 Military Experience:
 {experience_description}
 
-Return only the bullet points, one per line, starting with a dash (-)."""
-                }
-            ]
+Return only the bullet points, one per line, starting with a dash (-).""",
+            max_tokens=1024,
         )
 
+        if not response:
+            return _fallback_bullets(num_bullets)
+
         # Parse bullets from response
-        lines = response.content[0].text.strip().split('\n')
+        lines = response.strip().split('\n')
         bullets = [line.lstrip('- ').strip() for line in lines if line.strip().startswith('-')]
 
         return bullets[:num_bullets]

@@ -101,6 +101,9 @@ class GapAnalysis(BaseModel):
     recommendations: list[TrainingRecommendation]
     estimated_time_to_ready: str
     match_percentage: float
+    development_summary: Optional[str] = None
+    development_steps: list[str] = []
+    resource_suggestions: list[str] = []
 
 
 class GapRequest(BaseModel):
